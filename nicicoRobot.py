@@ -4,16 +4,18 @@ import telegram
 from telegram.error import NetworkError, Unauthorized
 from time import sleep
 from botFatherToken import botFatherToken
-from urllib.request import urlopen
+from requests import get
 update_id = None
-admins_username = ['Saeb_m']  # admins user names stand here
-start_deleting_hour = 18  # the hour when posting is illegal
-finish_deleting_time = 16 # the hour ppl can post msgs again
-spammers = {'111048031':'4'}  # list of spammers
+admins_username = {'Saeb_m':'09133917225'}  # admins user names stand here
+start_deleting_hour = 23  # the hour when posting is illegal
+finish_deleting_time = 7 # the hour ppl can post msgs again
+spammers = {}  # list of spammers
 night_deleting = True
+reports_dict = {}
 if (finish_deleting_time - start_deleting_hour > 0):
-    night_deleting = False
-
+    activate_deleting_hour = list(range(start_deleting_hour,finish_deleting_time))
+else:
+    activate_deleting_hour = list(range(start_deleting_hour, 24)) + list(range(0,finish_deleting_time))
 def main():
     global update_id
     # Telegram Bot Authorization Token
@@ -25,7 +27,8 @@ def main():
     except IndexError:
         update_id = None
 
-    logging.basicConfig(format='%(asctime)s - %``(name)s - %(levelname)s - %(message)s')
+    logging.basicConfig(format='%(asctime)s - %``(name)s - %(levelname)s -\
+     %(message)s')
 
     while True:
         try:
@@ -44,69 +47,82 @@ def echo(bot):
         update_id = update.update_id + 1
 
         if update.message:
+            #####VARIABlES:##############
             chat_id = update.message.chat.id
             msg_id = update.message.message_id
             msg_date = str(update.message.date).split()
             msg_date = msg_date[1].split(":")
             msg_time = int(msg_date[0])
-            msg_from_id = update.message.from_user.id
-            text_database_file = open('/home/saeb/log/text_database_file.txt', "a+")
+            msg_from_user_id = update.message.from_user.id
+            msg_from_user_username = update.message.from_user.username
+            msg_text = update.message.text
+            text_database_file = open('/home/saeb/log/text_database_file.txt',\
+                                      "a+")
             text_database_file.write("\n\n\n{}\n\n\n\n".format(update.message))
             text_database_file.close;
             have_spammer = False  # did any one spam today? not yet
             did_we_sent_rules = False
-            print("\n\n\n{}\n\n{}\n\n\n\n\n".format(msg_time, msg_from_id))
-            print(update.message)  # your bot can receive updates without messages
-            print("\n\n\n\nreplay to message: {}\n\n\n\n".format(update.message.reply_to_message))
-            ###################debug log
-            try:
-                tmp_text = update.message.reply_to_message
-                tmp_text_id = tmp_text['message_id']
-            except:
-                tmp_text_id = 'nothing'
-            #bot.sendMessage(chat_id,"replay id is : {} ".format(tmp_text_id))
-            update.message.reply_text("replay id is : {} ".format(tmp_text_id))
-            ##############debug part finished#################
 
-            if night_deleting:
-                if ((msg_time > start_deleting_hour) or (msg_time < finish_deleting_time)) \
-                        and msg_from_id not in admins_username:
-                    deleteSpams(msg_from_id, chat_id, msg_id,have_spammer,bot)
-                if ((update.message.text == 'now' and msg_from_id in admins_username) or (((finish_deleting_time <= msg_time) \
-                        and (msg_time <= start_deleting_hour)) and have_spammer)):
-                    unbanAgain(chat_id, bot)
-            if not night_deleting:
-                if ( start_deleting_hour < msg_time < finish_deleting_time )\
-                        and msg_from_id not in admins_username:
-                    deleteSpams(msg_from_id, chat_id, msg_id, have_spammer, bot)
-                if ( msg_time >= finish_deleting_time) and have_spammer:
-                    unbanAgain(chat_id, bot)
+            update.message.reply_text("replay id is : {} ".format(msg_text))
+            print("\n{}\n".format(update.message))
+            print("\nreplay to message: {}\n"\
+                  .format(update.message.reply_to_message))
+            if (msg_time in activate_deleting_hour) and \
+                    (msg_from_user_username not in admins_username.keys()):
+                delete_spams(msg_from_user_id, chat_id, msg_id,\
+                             have_spammer, bot)
+            if msg_text != None:
+                if (msg_text.lower() == 'report'):
+                    manageReports(update, bot, chat_id,msg_from_user_id)
 
-
-def deleteSpams(msg_from_id, chat_id, msg_id, have_spammer,bot):
+def delete_spams(msg_from_user_id, chat_id, msg_id, have_spammer, bot):
     if not have_spammer:
         have_spammer = True
     spam_times = 0
-    if msg_from_id not in spammers:
-        spammers[msg_from_id] = 1
+    if msg_from_user_id not in spammers:
+        spammers[msg_from_user_id] = 1
     else:
-        spam_times = int(spammers[msg_from_id])
+        spam_times = int(spammers[msg_from_user_id])
         if spam_times > 10:
-            bot.kickChatMember(chat_id, msg_from_id)
-            spammers[msg_from_id] = 0
+            bot.kickChatMember(chat_id, msg_from_user_id)
+            spammers[msg_from_user_id] = 0
         else:
-            spammers[msg_from_id] = int(spam_times + 1)
-    print('\n\nspammer: {} \n\n\nspamtime : {}\n\n'.format(msg_from_id, spam_times))
+            spammers[msg_from_user_id] = int(spam_times + 1)
+    print('\nfunction delete_spamer is working\nspammer: {}\
+     \n\n\nspamtime : {}\n\n'.format(msg_from_user_id, spam_times))
     bot.deleteMessage(chat_id, msg_id)
+    #bot.send_message(chat_id,"hi")
 
-def unbanAgain(chat_id,bot):
-    for key in spammers:
-        bot.unbanChatMember(chat_id, key)
-        spammers[key] = 0
+
+def unbanAgain(chat_id,msg_from_user_id, bot):
+        for key in spammers:
+            print("\n\n\nspammers: \n\n\n\n{}".format(spammers))
+            bot.unbanChatMember(chat_id, key)
+            spammers[key] = 0
         print("spammers are : \n{}\n".format(spammers))
-    have_spammer = False
-    print("\nspammer  if : {}\n".format(spammers))
-    print("\nhave spammers : {}\n".format(have_spammer))
+        have_spammer = False
+        print("\nspammer  if : {}\n".format(spammers))
+        print("\nhave spammers : {}\n".format(have_spammer))
+def manageReports(update, bot, chat_id,msg_from_user_id ):
+    global reports_dict
+    print(reports_dict)
+    if (update.message.reply_to_message != None):
+        tmp_text = update.message.reply_to_message
+        original_reported_id = tmp_text['message_id']
+        if original_reported_id not in reports_dict.keys():
+            reports_dict[original_reported_id] = [msg_from_user_id]
+            print(reports_dict)
+        if original_reported_id in reports_dict:
+            if msg_from_user_id not in reports_dict[original_reported_id]:
+                reports_dict[original_reported_id].append(msg_from_user_id)
+        for keys in reports_dict:
+            if (len(reports_dict[keys]) > 4):
+
+                get("")
+        update.message.reply_text("replay id is : {} "\
+                                  .format(original_reported_id))
+        bot.sendMessage(chat_id, "replay id is : {} "\
+                        .format(original_reported_id))
 
 if __name__ == '__main__':
     main()
