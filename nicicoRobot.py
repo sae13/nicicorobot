@@ -116,9 +116,32 @@ def manageReports(update, bot, chat_id,msg_from_user_id ):
             if msg_from_user_id not in reports_dict[original_reported_id]:
                 reports_dict[original_reported_id].append(msg_from_user_id)
         for keys in reports_dict:
-            if (len(reports_dict[keys]) > 4):
+            if (len(reports_dict[keys]) > 1):
+                from botFatherToken import sms_panel_data,sms_panel_url
+                msg = 'باسلام واحترام\n' \
+                                        'تعدادی از کاربران معتقدند پیام نامناسبی' \
+                                        ' در گروه هست.لطفا تلگرام را چک کنید'
+                sms_panel_data['to']='9133917225'
+                #http://37.130.202.188/class/sms/webservice/send_url.php
+                # ?from=+98100020400&to=09133917225&msg=yourmsg&uname=nicico&pass=E2040Ss
+                text = get("{}?"
+                           "from={}&"
+                           "to={}&"
+                           "msg={}&"
+                           "uname={}&"
+                           "pass={}".format(
+                    sms_panel_url,
+                    sms_panel_data['from'],
+                    sms_panel_data['to'],
+                    msg,
+                    sms_panel_data['uname'],
+                    sms_panel_data['pass']
+                ))
+                print('smsreport:{}\n'.format(text.text))
+                reports_dict[keys]=[]
 
-                get("")
+
+
         update.message.reply_text("replay id is : {} "\
                                   .format(original_reported_id))
         bot.sendMessage(chat_id, "replay id is : {} "\
