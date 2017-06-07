@@ -56,8 +56,8 @@ def echo(bot):
     for update in bot.get_updates(offset=update_id, timeout=10):
         update_id = update.update_id + 1
         uppdate = bot.get_updates(offset=2,timeout=10)
-        for u in uppdate:
-            print("\nuppdate data:\n{}".format(u))
+        # for u in uppdate:
+        #     print("\nuppdate data:\n{}".format(u))
         if update.message:
             #####VARIABlES:##############
             bot_info = bot.get_me()
@@ -84,7 +84,7 @@ def echo(bot):
             # for i in group_administrators:
             #      bot.send_message(chat_id=245549956,text=str(i.user.username))
             # update.message.reply_text("replay id is : {} ".format(msg_text))
-            print("\n{}\n".format(update.message))
+            # print("\n{}\n".format(update.message))
             # for i in group_administrators:
             #      print(i)
             if msg_text != None:
@@ -127,8 +127,8 @@ def delete_spams(msg_from_user_id, chat_id, msg_id, have_spammer, bot):
             spammers[msg_from_user_id] = 0
         else:
             spammers[msg_from_user_id] = int(spam_times + 1)
-    print('\nfunction delete_spamer is working\nspammer: {}\
-     \n\n\nspamtime : {}\n\n'.format(msg_from_user_id, spam_times))
+    # print('\nfunction delete_spamer is working\nspammer: {}\
+    #  \n\n\nspamtime : {}\n\n'.format(msg_from_user_id, spam_times))
     bot.deleteMessage(chat_id, msg_id)
 
     # bot.send_message(chat_id,"hi")
@@ -136,18 +136,18 @@ def delete_spams(msg_from_user_id, chat_id, msg_id, have_spammer, bot):
 
 def unbanAgain(chat_id, msg_from_user_id, bot):
     for key in spammers:
-        print("\n\n\nspammers: \n\n\n\n{}".format(spammers))
+        # print("\n\n\nspammers: \n\n\n\n{}".format(spammers))
         bot.unbanChatMember(chat_id, key)
         spammers[key] = 0
-    print("spammers are : \n{}\n".format(spammers))
-    have_spammer = False
-    print("\nspammer  if : {}\n".format(spammers))
-    print("\nhave spammers : {}\n".format(have_spammer))
+    # print("spammers are : \n{}\n".format(spammers))
+    # have_spammer = False
+    # print("\nspammer  if : {}\n".format(spammers))
+    # print("\nhave spammers : {}\n".format(have_spammer))
 
 
 def manageReports(update, bot, chat_id, msg_from_user_id):
     global reports_dict
-    print(reports_dict)
+    # print(reports_dict)
     # bot.get_chat_administrators()
     if (update.message.reply_to_message != None):
         bot.delete_message(chat_id=chat_id, \
@@ -180,8 +180,8 @@ def manageReports(update, bot, chat_id, msg_from_user_id):
                     sms_panel_data['uname'],
                     sms_panel_data['pass']
                 ))
-                print('smsreport:{}\n'.format(text.text))
-                reports_dict[keys] = []
+                # print('smsreport:{}\n'.format(text.text))
+                # reports_dict[keys] = []
 
 
 
