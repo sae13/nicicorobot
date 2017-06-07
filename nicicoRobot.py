@@ -5,13 +5,15 @@ from telegram.error import NetworkError, Unauthorized
 from time import sleep
 from botFatherToken import botFatherToken
 from requests import get
-
+upppdate = None
 update_id = None
-admins_username = {'Saeb_m': '09133917225'}  # admins user names stand here
-start_deleting_hour = 22  # the hour when posting is illegal
-finish_deleting_time = 7  # the hour ppl can post msgs again
+admins_username = {}#'Saeb_m': '09133917225',
+                  #'Hojati':'0'}  # admins user names stand here
+start_deleting_hour = 16  # the hour when posting is illegal
+finish_deleting_time = 15  # the hour ppl can post msgs again
 spammers = {}  # list of spammers
 reports_dict = {}
+group_administrators=group_administrators_list = {}
 if (finish_deleting_time - start_deleting_hour > 0):
     activate_deleting_hour = list(
         range(start_deleting_hour, finish_deleting_time))
@@ -21,13 +23,17 @@ else:
 
 
 def main():
+    print("hi")
     global update_id
+    global upppdate
     # Telegram Bot Authorization Token
     bot = telegram.Bot(botFatherToken)
     # get the first pending update_id, this is so we can skip over it in case
     # we get an "Unauthorized" exception.
     try:
         update_id = bot.get_updates()[0].update_id
+        upppdate = bot.get_updates()[0]
+
     except IndexError:
         update_id = None
 
@@ -49,9 +55,12 @@ def echo(bot):
     # Request updates after the last update_id
     for update in bot.get_updates(offset=update_id, timeout=10):
         update_id = update.update_id + 1
-
+        uppdate = bot.get_updates(offset=2,timeout=10)
+        for u in uppdate:
+            print("\nuppdate data:\n{}".format(u))
         if update.message:
             #####VARIABlES:##############
+            bot_info = bot.get_me()
             chat_id = update.message.chat.id
             msg_id = update.message.message_id
             msg_date = str(update.message.date).split()
@@ -60,31 +69,47 @@ def echo(bot):
             msg_from_user_id = update.message.from_user.id
             msg_from_user_username = update.message.from_user.username
             msg_text = update.message.text
+
             group_administrators = bot.get_chat_administrators(chat_id)
+            for key in group_administrators:
+                group_administrators_list[key.user.id] =\
+                    str(key.user.username)
+            group_administrators_list.pop(bot_info.id)
             text_database_file = open('/home/saeb/log/text_database_file.txt', \
                                       "a+")
             text_database_file.write("\n\n\n{}\n\n\n".format(update.message))
             text_database_file.close;
             have_spammer = False  # did any one spam today? not yet
             did_we_sent_rules = False
-            # bot.send_message(chat_id=245549956,text="selam")
+            # for i in group_administrators:
+            #      bot.send_message(chat_id=245549956,text=str(i.user.username))
             # update.message.reply_text("replay id is : {} ".format(msg_text))
             print("\n{}\n".format(update.message))
-            for i in group_administrators:
-                 print(i)
+            # for i in group_administrators:
+            #      print(i)
             if msg_text != None:
+                if (msg_text == 'مدیران'):
+                    admins_username_for_print = "لیست مدیران:\n"
+                    for i in group_administrators_list.keys():
+                        admins_username_for_print = admins_username_for_print +\
+                            ("@{}\n".format(str(group_administrators_list[i])))
+                    bot.send_message(chat_id,admins_username_for_print)
+                    bot.delete_message(chat_id,msg_id)
+
                 if (msg_text == 'نامناسب'):
                     manageReports(update, bot, chat_id, msg_from_user_id)
 
                 if (msg_text.lower() == 'reports') and \
-                        (msg_from_user_username in admins_username.keys()):
+                        (msg_from_user_id in group_administrators_list.keys()):
+                    bot.delete_message(chat_id, msg_id)
                     # update.message.reply_text("تابع ارسال گزارشات")
                     for keys in reports_dict:
                         bot.send_message(chat_id=chat_id,
-                                         text="پیام‌های گزارش شده",
+                                         text="این پیام گزارش شده",
                                          reply_to_message_id=keys)
             if (msg_time in activate_deleting_hour) and \
-                    (msg_from_user_username not in admins_username.keys()):
+                    (msg_from_user_id not in\
+                             group_administrators_list.keys()):
                 delete_spams(msg_from_user_id, chat_id, msg_id, \
                              have_spammer, bot)
 
@@ -165,6 +190,7 @@ def manageReports(update, bot, chat_id, msg_from_user_id):
                 # bot.sendMessage(chat_id, "replay id is : {} "\
                 #                .format(original_reported_id))
 
+# def verification():
 
 if __name__ == '__main__':
     main()
