@@ -12,8 +12,8 @@ upppdate = None
 update_id = None
 admins_username = {}#'Saeb_m': '09133917225',
                   #'Hojati':'0'}  # admins user names stand here
-start_deleting_hour = 16  # the hour when posting is illegal
-finish_deleting_time = 15  # the hour ppl can post msgs again
+start_deleting_hour = 9  # the hour when posting is illegal
+finish_deleting_time = 10  # the hour ppl can post msgs again
 spammers = {}  # list of spammers
 reports_dict = {}
 group_administrators=group_administrators_list = {}
@@ -91,8 +91,10 @@ def echo(bot):
             conn = sqlite3.connect("file:nicico.sqlite",uri = True)
             verified_user = conn.execute("SELECT user_id from verified where (user_id =="
                                  " (?));",(msg_from_user_id,)).fetchone()
-            if verified_user == None and msg_from_user_id not in \
-                    group_administrators_list.keys():
+            if verified_user == None and \
+                    msg_from_user_id not in \
+                    group_administrators_list.keys() and \
+                    msg_time not in activate_deleting_hour:
                 if msg_jalali_date_str not in unverified.keys():
                     tmp_user_msg_count = {}
                     tmp_user_msg_count[msg_from_user_id] = 0
