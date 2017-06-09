@@ -5,6 +5,9 @@ from telegram.error import NetworkError, Unauthorized
 from time import sleep
 from botFatherToken import botFatherToken
 from requests import get
+from khayyam import JalaliDatetime
+import sqlite3
+import datetime
 upppdate = None
 update_id = None
 admins_username = {}#'Saeb_m': '09133917225',
@@ -14,6 +17,7 @@ finish_deleting_time = 15  # the hour ppl can post msgs again
 spammers = {}  # list of spammers
 reports_dict = {}
 group_administrators=group_administrators_list = {}
+unverified = {}
 if (finish_deleting_time - start_deleting_hour > 0):
     activate_deleting_hour = list(
         range(start_deleting_hour, finish_deleting_time))
@@ -23,13 +27,13 @@ else:
 
 
 def main():
-    print("hi")
     global update_id
     global upppdate
     # Telegram Bot Authorization Token
     bot = telegram.Bot(botFatherToken)
     # get the first pending update_id, this is so we can skip over it in case
     # we get an "Unauthorized" exception.
+
     try:
         update_id = bot.get_updates()[0].update_id
         upppdate = bot.get_updates()[0]
@@ -56,21 +60,24 @@ def echo(bot):
     for update in bot.get_updates(offset=update_id, timeout=10):
         update_id = update.update_id + 1
         uppdate = bot.get_updates(offset=2,timeout=10)
-        # for u in uppdate:
-        #     print("\nuppdate data:\n{}".format(u))
         if update.message:
-            #####VARIABlES:##############
+            print("\n{}\n".format(update.message))
             bot_info = bot.get_me()
             chat_id = update.message.chat.id
             msg_id = update.message.message_id
             msg_date = str(update.message.date).split()
+            msg_jalali_date = JalaliDatetime(update.message.date)
+            msg_jalali_date_str = "{}{:02d}{}".format(msg_jalali_date.year,
+                                                  msg_jalali_date.month,
+                                                  msg_jalali_date.day)
+            print("message date:{}\n".format(msg_jalali_date_str))
             msg_date = msg_date[1].split(":")
             msg_time = int(msg_date[0])
             msg_from_user_id = update.message.from_user.id
             msg_from_user_username = update.message.from_user.username
             msg_text = update.message.text
-
             group_administrators = bot.get_chat_administrators(chat_id)
+            group_administrators_list = {}
             for key in group_administrators:
                 group_administrators_list[key.user.id] =\
                     str(key.user.username)
@@ -79,14 +86,31 @@ def echo(bot):
                                       "a+")
             text_database_file.write("\n\n\n{}\n\n\n".format(update.message))
             text_database_file.close;
-            have_spammer = False  # did any one spam today? not yet
-            did_we_sent_rules = False
-            # for i in group_administrators:
-            #      bot.send_message(chat_id=245549956,text=str(i.user.username))
-            # update.message.reply_text("replay id is : {} ".format(msg_text))
-            # print("\n{}\n".format(update.message))
-            # for i in group_administrators:
-            #      print(i)
+            have_spammer = False
+            #####DB
+            conn = sqlite3.connect("file:nicico.sqlite",uri = True)
+            verified_user = conn.execute("SELECT user_id from verified where (user_id =="
+                                 " (?));",(msg_from_user_id,)).fetchone()
+            if verified_user == None and msg_from_user_id not in \
+                    group_administrators_list.keys():
+                if msg_jalali_date_str not in unverified.keys():
+                    tmp_user_msg_count = {}
+                    tmp_user_msg_count[msg_from_user_id] = 0
+                    unverified[msg_jalali_date_str] = \
+                    tmp_user_msg_count
+                    print("unverified mssg list first update",unverified)
+                if msg_from_user_id not in\
+                        unverified[msg_jalali_date_str].keys():
+                    tmp_user_msg_count = {}
+                    tmp_user_msg_count[msg_from_user_id] = 0
+                    unverified[msg_jalali_date_str].update(tmp_user_msg_count)
+                unverified[msg_jalali_date_str][msg_from_user_id] = \
+                    unverified[msg_jalali_date_str][msg_from_user_id]+1
+                if unverified[msg_jalali_date_str][msg_from_user_id] > 5 :
+                   bot.delete_message(chat_id,msg_id)
+
+            print("tayid nashode ha:{}".format(unverified))
+            conn.close()
             if msg_text != None:
                 if (msg_text == 'مدیران'):
                     admins_username_for_print = "لیست مدیران:\n"
@@ -102,7 +126,6 @@ def echo(bot):
                 if (msg_text.lower() == 'reports') and \
                         (msg_from_user_id in group_administrators_list.keys()):
                     bot.delete_message(chat_id, msg_id)
-                    # update.message.reply_text("تابع ارسال گزارشات")
                     for keys in reports_dict:
                         bot.send_message(chat_id=chat_id,
                                          text="این پیام گزارش شده",
@@ -127,28 +150,13 @@ def delete_spams(msg_from_user_id, chat_id, msg_id, have_spammer, bot):
             spammers[msg_from_user_id] = 0
         else:
             spammers[msg_from_user_id] = int(spam_times + 1)
-    # print('\nfunction delete_spamer is working\nspammer: {}\
-    #  \n\n\nspamtime : {}\n\n'.format(msg_from_user_id, spam_times))
     bot.deleteMessage(chat_id, msg_id)
-
-    # bot.send_message(chat_id,"hi")
-
-
 def unbanAgain(chat_id, msg_from_user_id, bot):
     for key in spammers:
-        # print("\n\n\nspammers: \n\n\n\n{}".format(spammers))
         bot.unbanChatMember(chat_id, key)
         spammers[key] = 0
-    # print("spammers are : \n{}\n".format(spammers))
-    # have_spammer = False
-    # print("\nspammer  if : {}\n".format(spammers))
-    # print("\nhave spammers : {}\n".format(have_spammer))
-
-
 def manageReports(update, bot, chat_id, msg_from_user_id):
     global reports_dict
-    # print(reports_dict)
-    # bot.get_chat_administrators()
     if (update.message.reply_to_message != None):
         bot.delete_message(chat_id=chat_id, \
                            message_id=update.message.message_id)
@@ -156,13 +164,12 @@ def manageReports(update, bot, chat_id, msg_from_user_id):
         original_reported_id = tmp_text['message_id']
         if original_reported_id not in reports_dict.keys():
             reports_dict[original_reported_id] = [msg_from_user_id]
-
         if original_reported_id in reports_dict:
             if msg_from_user_id not in reports_dict[original_reported_id]:
                 reports_dict[original_reported_id].append(msg_from_user_id)
         for keys in reports_dict:
             if (len(reports_dict[keys]) > 1):
-                from botFatherToken import sms_panel_data, sms_panel_url
+                from botFatherToken import sms_panel_data
                 msg = 'باسلام واحترام\n' \
                       'تعدادی از کاربران معتقدند پیام نامناسبی' \
                       ' در گروه هست.لطفا تلگرام را چک کنید'
@@ -173,24 +180,12 @@ def manageReports(update, bot, chat_id, msg_from_user_id):
                            "msg={}&"
                            "uname={}&"
                            "pass={}".format(
-                    sms_panel_url,
+                    sms_panel_data['sms_panel_url'],
                     sms_panel_data['from'],
                     sms_panel_data['to'],
                     msg,
                     sms_panel_data['uname'],
                     sms_panel_data['pass']
                 ))
-                # print('smsreport:{}\n'.format(text.text))
-                # reports_dict[keys] = []
-
-
-
-                # update.message.reply_text("replay id is : {} "\
-                #                          .format(original_reported_id))
-                # bot.sendMessage(chat_id, "replay id is : {} "\
-                #                .format(original_reported_id))
-
-# def verification():
-
 if __name__ == '__main__':
     main()

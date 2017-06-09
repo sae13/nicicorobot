@@ -75,3 +75,4 @@ telegram.webp
 # Exclude .exrc file for Vim
 .exrc
 botFatherToken.py
+*.sqlite
