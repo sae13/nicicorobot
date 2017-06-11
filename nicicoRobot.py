@@ -7,7 +7,7 @@ from botFatherToken import botFatherToken
 from requests import get
 from khayyam import JalaliDatetime
 import sqlite3
-import datetime
+bot_started = JalaliDatetime.now()
 upppdate = None
 update_id = None
 admins_username = {}#'Saeb_m': '09133917225',
@@ -127,7 +127,24 @@ def echo(bot):
                             ("@{}\n".format(str(group_administrators_list[i])))
                     bot.send_message(chat_id,admins_username_for_print)
                     bot.delete_message(chat_id,msg_id)
+                if msg_text.lower() == 'uptime' :
+                    now_time = JalaliDatetime.now()
+                    uptime = now_time - bot_started
+                    days_uptime = uptime.seconds // (3600 * 24)
+                    hours_uptime = (uptime.seconds % (3600 * 24)) // 3600
+                    minutes_uptime =((uptime.seconds % (3600 * 24)) % 3600) //60
+                    bot.delete_message(chat_id, msg_id)
+                    bot.send_message(chat_id,"مدت زمانی فعالیت بات:"
+                                             "\n "
+                                             "{} روز و"
+                                                "\n"
+                                             " {}ساعت "
+                    "\n"
+                                             "{}دقیقه".format(days_uptime,
+                                                              hours_uptime,
+                                                              minutes_uptime))
 
+                    break
                 if (msg_text == 'نامناسب'):
                     manageReports(update, bot, chat_id, msg_from_user_id)
 
