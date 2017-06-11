@@ -12,8 +12,8 @@ upppdate = None
 update_id = None
 admins_username = {}#'Saeb_m': '09133917225',
                   #'Hojati':'0'}  # admins user names stand here
-start_deleting_hour = 9  # the hour when posting is illegal
-finish_deleting_time = 10  # the hour ppl can post msgs again
+start_deleting_hour = 20  # the hour when posting is illegal
+finish_deleting_time = 8  # the hour ppl can post msgs again
 spammers = {}  # list of spammers
 reports_dict = {}
 group_administrators=group_administrators_list = {}
@@ -76,12 +76,18 @@ def echo(bot):
             msg_from_user_id = update.message.from_user.id
             msg_from_user_username = update.message.from_user.username
             msg_text = update.message.text
-            group_administrators = bot.get_chat_administrators(chat_id)
+            try:
+                group_administrators = bot.get_chat_administrators(chat_id)
+            except:
+                continue
             group_administrators_list = {}
             for key in group_administrators:
                 group_administrators_list[key.user.id] =\
                     str(key.user.username)
-            group_administrators_list.pop(bot_info.id)
+            try:
+                group_administrators_list.pop(bot_info.id)
+            except:
+                continue
             text_database_file = open('/home/saeb/log/text_database_file.txt', \
                                       "a+")
             text_database_file.write("\n\n\n{}\n\n\n".format(update.message))
