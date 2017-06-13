@@ -130,7 +130,7 @@ def echo(bot):
                 if msg_text.lower() == 'uptime' :
                     now_time = JalaliDatetime.now()
                     uptime = now_time - bot_started
-                    days_uptime = uptime.seconds // (3600 * 24)
+                    days_uptime = uptime.days
                     hours_uptime = (uptime.seconds % (3600 * 24)) // 3600
                     minutes_uptime =((uptime.seconds % (3600 * 24)) % 3600) //60
                     bot.delete_message(chat_id, msg_id)
